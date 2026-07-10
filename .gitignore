@@ -1,0 +1,30 @@
+# ── secrets ──────────────────────────────────────────────────────────────────
+.env
+*.env
+
+# ── Python cache ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ── virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+.python-version
+
+# ── OS noise ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Claude Code session data ──────────────────────────────────────────────────
+.claude/
+
+# ── regenerated output (large, rebuilt on every run) ─────────────────────────
+ma_digest.html
+ma_digest.md
+
+# ── misc editor / tool artifacts ─────────────────────────────────────────────
+.Rhistory
+*.swp
+*.swo

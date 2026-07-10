@@ -1333,9 +1333,9 @@ button { cursor: pointer; font-family: inherit; border: none; }
 }
 .sg-title {
   font-size: .6rem; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--text-3);
+  text-transform: uppercase; color: var(--text-2);
 }
-.sg-caption { font-size: .65rem; color: var(--text-3); opacity: .6; }
+.sg-caption { font-size: .65rem; color: var(--text-2); opacity: .8; }
 .sg-grid {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: .9rem 2rem;
 }
@@ -1344,7 +1344,7 @@ button { cursor: pointer; font-family: inherit; border: none; }
 .sg-name {
   font-size: .68rem; font-weight: 700; margin-bottom: .22rem; letter-spacing: .01em;
 }
-.sg-industries { font-size: .63rem; color: var(--text-3); line-height: 1.6; }
+.sg-industries { font-size: .63rem; color: var(--text-1); line-height: 1.6; }
 
 /* ── tab bar ── */
 .tabbar {

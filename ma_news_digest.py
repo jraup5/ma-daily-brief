@@ -1307,7 +1307,7 @@ button { cursor: pointer; font-family: inherit; border: none; }
   position: fixed; inset: 0; z-index: 500;
   background: rgba(0,0,0,.72);
   display: flex; align-items: center; justify-content: center;
-  padding: 1.5rem; overflow-y: auto;
+  padding: 1rem; overflow-y: auto;
   opacity: 0; pointer-events: none; transition: opacity .18s;
 }
 .sg-overlay.open { opacity: 1; pointer-events: auto; }
@@ -1315,9 +1315,9 @@ button { cursor: pointer; font-family: inherit; border: none; }
   background: var(--bg-2);
   border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
   box-shadow: 0 8px 40px rgba(0,0,0,.55), 0 1px 6px rgba(0,0,0,.3);
-  border-radius: 12px; width: 100%; max-width: 880px;
-  max-height: 90vh; overflow-y: auto;
-  padding: 2rem 2.25rem 2.5rem; position: relative;
+  border-radius: 12px; width: 92vw; max-width: 1200px;
+  max-height: 92vh; overflow-y: auto;
+  padding: 2.5rem 3rem 3rem; position: relative;
   transform: scale(.97); transition: transform .18s;
 }
 .sg-overlay.open .sg-modal { transform: scale(1); }
@@ -1337,7 +1337,7 @@ button { cursor: pointer; font-family: inherit; border: none; }
 }
 .sg-caption { font-size: .65rem; color: var(--text-2); opacity: .8; }
 .sg-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: .9rem 2rem;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.6rem 2rem;
 }
 @media (max-width: 760px) { .sg-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 520px) { .sg-grid { grid-template-columns: repeat(2, 1fr); } }

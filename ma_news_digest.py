@@ -1856,7 +1856,7 @@ def run_pipeline(
 
     write_digest(deduped, out, ai_used)
 
-    html_path = re.sub(r"\.md$", ".html", out) if out.endswith(".md") else out + ".html"
+    html_path = os.path.join(os.path.dirname(os.path.abspath(out)), "index.html")
     write_html(deduped, html_path, ai_used, key_insight=key_insight)
     return html_path
 

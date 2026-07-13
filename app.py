@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR        = os.path.dirname(os.path.abspath(__file__))
-DASHBOARD_PATH  = os.path.join(BASE_DIR, "ma_digest.html")
+DASHBOARD_PATH  = os.path.join(BASE_DIR, "index.html")
 INSIGHT_FILE    = os.path.join(BASE_DIR, "key_insight.json")
 
 sys.path.insert(0, BASE_DIR)

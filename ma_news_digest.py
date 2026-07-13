@@ -1307,7 +1307,7 @@ button { cursor: pointer; font-family: inherit; border: none; }
   position: fixed; inset: 0; z-index: 500;
   background: rgba(0,0,0,.72);
   display: flex; align-items: center; justify-content: center;
-  padding: 1rem; overflow-y: auto;
+  padding: 2rem; overflow-y: auto;
   opacity: 0; pointer-events: none; transition: opacity .18s;
 }
 .sg-overlay.open { opacity: 1; pointer-events: auto; }
@@ -1315,36 +1315,36 @@ button { cursor: pointer; font-family: inherit; border: none; }
   background: var(--bg-2);
   border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
   box-shadow: 0 8px 40px rgba(0,0,0,.55), 0 1px 6px rgba(0,0,0,.3);
-  border-radius: 12px; width: 92vw; max-width: 1200px;
+  border-radius: 12px; width: 82vw; max-width: 1100px;
   max-height: 92vh; overflow-y: auto;
-  padding: 2.5rem 3rem 3rem; position: relative;
+  padding: 3rem 3.5rem 3.5rem; position: relative;
   transform: scale(.97); transition: transform .18s;
 }
 .sg-overlay.open .sg-modal { transform: scale(1); }
 .sg-close {
-  position: absolute; top: 1rem; right: 1.1rem;
+  position: absolute; top: 1.1rem; right: 1.3rem;
   background: none; border: none; color: var(--text-3);
-  font-size: 1.1rem; cursor: pointer; padding: .15rem .38rem;
+  font-size: 1.2rem; cursor: pointer; padding: .2rem .45rem;
   border-radius: 3px; line-height: 1; transition: color .12s, background .12s;
 }
 .sg-close:hover { color: var(--text-1); background: var(--border); }
 .sg-header {
-  display: flex; align-items: baseline; gap: .75rem; margin-bottom: 1.25rem;
+  display: flex; align-items: baseline; gap: .85rem; margin-bottom: 1.75rem;
 }
 .sg-title {
-  font-size: .6rem; font-weight: 700; letter-spacing: .14em;
+  font-size: .7rem; font-weight: 700; letter-spacing: .14em;
   text-transform: uppercase; color: var(--text-2);
 }
-.sg-caption { font-size: .65rem; color: var(--text-2); opacity: .8; }
+.sg-caption { font-size: .75rem; color: var(--text-2); opacity: .8; }
 .sg-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.6rem 2rem;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.5rem 3rem;
 }
 @media (max-width: 760px) { .sg-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 520px) { .sg-grid { grid-template-columns: repeat(2, 1fr); } }
 .sg-name {
-  font-size: .68rem; font-weight: 700; margin-bottom: .22rem; letter-spacing: .01em;
+  font-size: .85rem; font-weight: 700; margin-bottom: .5rem; letter-spacing: .01em;
 }
-.sg-industries { font-size: .63rem; color: var(--text-1); line-height: 1.6; }
+.sg-industries { font-size: .78rem; color: var(--text-1); line-height: 1.65; }
 
 /* ── tab bar ── */
 .tabbar {

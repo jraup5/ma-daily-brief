@@ -885,7 +885,7 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
 
     stat_total     = str(len(news_rows))
     stat_value     = fmt_m(total_m) if total_m else "—"
-    stat_value_sub = (f"across {len(valued)} deal{'s' if len(valued) != 1 else ''}"
+    stat_value_sub = (f"across {len(valued)} of {len(news_rows)} deals with disclosed values"
                       if valued else "none disclosed")
     stat_sectors   = str(len(all_sectors)) if all_sectors else "—"
     if biggest_r and biggest_m:

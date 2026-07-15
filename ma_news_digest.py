@@ -854,6 +854,15 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
     }
 
     # ── stats from full log ────────────────────────────────────────────────
+    # Temporary exclusion for entries whose reported value is in a non-USD
+    # currency with no vetted USD conversion, so they don't distort Largest
+    # Deal / Top 5 / Disclosed Value while still appearing as deal cards.
+    # TODO: remove once structured currency conversion lands.
+    _VALUE_EXCLUDED_URLS = {
+        "https://news.google.com/rss/articles/CBMihAFBVV95cUxOMDFSX0hIOTcxU3VhaEItYjBmcERKQnh4SUJCa1d2SS1iRlVlNmQ1aWpzUndNYjZweHlERmkzb091VE42ZEw5Z2lmSm9ZV2lrcWNpOE55eTNpNWtsel9hNi0yYmtjM2U4MUNsbHV2Zy1iVzd0eHBYYzV1VTczcWUtYWFWUVI?oc=5",  # ECARX -> Flyme software business (RMB)
+        "https://news.google.com/rss/articles/CBMiswFBVV95cUxNZFhTUkNzQ3NSTjRYbjVTTUl0TlhWcE5UV0toWkNCajQyby1aaHBIVnBfaWhFYU9PQ3Q1bTZ4OUNOQkZ4NlRlYU16dktwVDJBZTczVmJvajlXTFdyVTAyN19LRjNpZEhheS1yanRWYXZqVWRPRC1NVUotbUd3NTBqdHZUcW1SOFJiX2FDLXctV1NDWTg2YzVFQkdnQVh6cDZXeGpnTmN3UGN2LURLUk5FRnYxYw?oc=5",  # ECARX -> Flyme Auto and Mobile OS (RMB)
+    }
+
     def parse_m(v: str) -> float | None:
         m = re.search(r'([\d,]+(?:\.\d+)?)\s*([TBMK])', (v or "").upper())
         if not m:
@@ -868,7 +877,8 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
             return f"${mills/1_000:.1f}B"
         return f"${mills:.0f}M"
 
-    valued = [(r, parse_m(r.get("value", ""))) for r in news_rows]
+    valued = [(r, parse_m(r.get("value", ""))) for r in news_rows
+              if r.get("url", "") not in _VALUE_EXCLUDED_URLS]
     valued = [(r, v) for r, v in valued if v is not None]
     total_m = sum(v for _, v in valued)
     biggest_r, biggest_m = max(valued, key=lambda x: x[1], default=(None, None))
@@ -938,6 +948,7 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
     recent_valued = sorted(
         ((r, v) for r in news_rows
          if r.get("date", "") >= cutoff_30
+         and r.get("url", "") not in _VALUE_EXCLUDED_URLS
          for v in [parse_m(r.get("value", ""))] if v is not None),
         key=lambda x: -x[1]
     )

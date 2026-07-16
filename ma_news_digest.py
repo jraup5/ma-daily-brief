@@ -1651,7 +1651,7 @@ document.addEventListener('DOMContentLoaded', init);
 </div>
 
 <footer class="footer">
-  <span>Auto-generated · {today_str}{"  ·  AI-filtered" if ai_used else ""}</span>
+  <span>Auto-generated daily · {today_str}{"  ·  AI-filtered" if ai_used else ""}</span>
   <span>Source: deal_log.csv</span>
 </footer>
 

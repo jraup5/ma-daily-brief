@@ -217,6 +217,7 @@ def _norm_party(name: str) -> str:
         return ""
     s = re.sub(r"\([^)]*\)", " ", s)       # strip tickers like (AAPL) or (NYSE: AAPL)
     s = re.sub(r"[’']s\b", "", s)          # strip possessive ('s / 's) before punctuation strip
+    s = re.sub(r"\band\b", " ", s, flags=re.IGNORECASE)  # strip connector so "X and Y" aligns with "X / Y"
     s = _LEGAL_SUFFIXES.sub(" ", s)
     s = re.sub(r"[^a-z0-9 ]", " ", s.lower())
     s = re.sub(r"\s+", " ", s).strip()

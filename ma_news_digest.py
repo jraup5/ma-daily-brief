@@ -216,6 +216,7 @@ def _norm_party(name: str) -> str:
     if not s:
         return ""
     s = re.sub(r"\([^)]*\)", " ", s)       # strip tickers like (AAPL) or (NYSE: AAPL)
+    s = re.sub(r"[’']s\b", "", s)          # strip possessive ('s / 's) before punctuation strip
     s = _LEGAL_SUFFIXES.sub(" ", s)
     s = re.sub(r"[^a-z0-9 ]", " ", s.lower())
     s = re.sub(r"\s+", " ", s).strip()
@@ -225,14 +226,22 @@ def _norm_party(name: str) -> str:
 def _names_match(n1: str, n2: str) -> bool:
     """True when two normalized party names clearly refer to the same entity.
 
-    Exact match always qualifies.  Substring match (one contains the other)
-    requires both strings to be at least 5 chars, avoiding false positives
-    from short tokens like 'co' or 'us'.
+    Exact match always qualifies.  A whole-word prefix match (one name's
+    words are exactly the leading words of the other, e.g. "iks" vs.
+    "iks health") qualifies at any length, since it's anchored to word
+    boundaries rather than an arbitrary substring.  Otherwise, a substring
+    match (one contains the other) requires both strings to be at least
+    5 chars, avoiding false positives from short tokens like 'co' or 'us'.
     """
     if not n1 or not n2:
         return False
     if n1 == n2:
         return True
+    w1, w2 = n1.split(), n2.split()
+    if w1 and w2:
+        shorter, longer = (w1, w2) if len(w1) <= len(w2) else (w2, w1)
+        if longer[:len(shorter)] == shorter:
+            return True
     if len(n1) >= 5 and len(n2) >= 5:
         return n1 in n2 or n2 in n1
     return False

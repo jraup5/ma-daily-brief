@@ -166,6 +166,7 @@ class NewsItem:
     target: str = ""
     value: str = ""
     sector: str = ""
+    status: str = ""       # "closed" or "pending"
     importance: int = 0  # 1-5
 
     def key(self) -> str:
@@ -634,9 +635,18 @@ def ai_enrich(items: list[NewsItem]) -> list[NewsItem]:
             "- Entertainment, celebrity, or talent deals\n"
             "- Real estate, art, or personal asset sales\n"
             "- Market commentary, opinion pieces, analyst notes, or shareholder letters\n"
+            "- Deals that have fallen through — rejected, withdrawn, abandoned, "
+            "scrapped, terminated, called off, collapsed, dropped, or lapsed bids\n"
             "- Any item you are not certain is a genuine M&A deal\n\n"
             "DEDUP: If a news-source item and an SEC EDGAR item clearly describe the "
             "same deal, keep ONLY the news item.\n\n"
+            "STATUS: For every kept item, classify deal stage from the headline's "
+            "language alone. 'closed' ONLY when the headline clearly signals a "
+            "completed deal (completes, completed, closes, finalizes, completion, "
+            "acquisition complete, or clear past-tense 'acquired' in a completion "
+            "sense). Everything else that is a live deal is 'pending', including "
+            "agreed/definitive-agreement deals, bids, offers, rival bids, regulatory-"
+            "clearance steps, and anything ambiguous.\n\n"
             "FIELD RULES:\n"
             "- Items whose source is 'SEC EDGAR': set acquirer and target to empty "
             "string — do not guess from a filing label.\n"
@@ -648,12 +658,15 @@ def ai_enrich(items: list[NewsItem]) -> list[NewsItem]:
             "banks/insurers/asset managers/PE firms → Financials; "
             "telecom/media/cable/internet platforms → Communications; "
             "pharma/biotech/medtech/hospitals → Healthcare.\n\n"
-            "Return ONLY a JSON array — no prose, no markdown fences. Each element:\n"
+            "Return ONLY a JSON array — no prose, no markdown fences. Do not explain "
+            "your reasoning; output only the JSON array. Each element:\n"
             '{"i": <index>, "keep": true, "acquirer": "", "target": "", '
-            '"value": "", "sector": "", "importance": 1-5}\n'
+            '"value": "", "sector": "", "importance": 1-5, '
+            '"status": "closed"|"pending"}\n'
             "Only include entries where keep is true. importance: 5 = landmark/large, "
             "1 = minor. sector is REQUIRED for non-SEC items — if you cannot assign "
-            "one of the 11 sectors with confidence, set keep to false.\n\n"
+            "one of the 11 sectors with confidence, set keep to false. status is "
+            "REQUIRED for every kept item and MUST be exactly 'closed' or 'pending'.\n\n"
             "ITEMS:\n" + json.dumps(batch, ensure_ascii=False)
         )
 
@@ -675,8 +688,10 @@ def ai_enrich(items: list[NewsItem]) -> list[NewsItem]:
             text = "".join(
                 block.text for block in resp.content if block.type == "text"
             )
-            text = re.sub(r"^```(?:json)?|```$", "", text.strip()).strip()
-            verdicts = json.loads(text)
+            start, end = text.find("["), text.rfind("]")
+            if start == -1 or end == -1 or end < start:
+                raise ValueError("no JSON array found in response")
+            verdicts = json.loads(text[start:end + 1])
         except Exception as e:  # noqa: BLE001
             print(f"  ! AI batch {batch_start//BATCH_SIZE + 1} failed, dropping batch: {e}",
                   file=sys.stderr)
@@ -700,6 +715,7 @@ def ai_enrich(items: list[NewsItem]) -> list[NewsItem]:
             it.target = target
             it.value = v.get("value", "")
             it.sector = sector
+            it.status = v.get("status", "")
             it.importance = int(v.get("importance", 0) or 0)
             kept.append(it)
 
@@ -850,6 +866,7 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
                 "title": it.title, "acquirer": it.acquirer, "target": it.target,
                 "value": it.value, "sector": it.sector,
                 "importance": str(it.importance), "source": it.source, "url": it.url,
+                "status": it.status,
             }
             for it in items if it.source != "SEC EDGAR"
         ]
@@ -1684,7 +1701,7 @@ document.addEventListener('DOMContentLoaded', init);
 # ----------------------------------------------------------------------------
 
 _LOG_COLUMNS = ["date", "acquirer", "target", "value", "sector",
-                "importance", "source", "url", "title"]
+                "importance", "source", "url", "title", "status"]
 
 
 def _item_matches_row(it: NewsItem, row: dict) -> bool:
@@ -1722,7 +1739,7 @@ def append_to_deal_log(items: list[NewsItem], path: str = "deal_log.csv") -> int
         try:
             with open(path, newline="", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
-                needs_migration = "title" not in (reader.fieldnames or [])
+                needs_migration = not {"title", "status"}.issubset(reader.fieldnames or [])
                 existing_rows = list(reader)
         except Exception as e:
             print(f"  ! Could not read {path}: {e}", file=sys.stderr)
@@ -1744,6 +1761,7 @@ def append_to_deal_log(items: list[NewsItem], path: str = "deal_log.csv") -> int
             "source": it.source,
             "url": it.url,
             "title": it.title,
+            "status": it.status,
         }
         accumulated.append(row)
         new_rows.append(row)

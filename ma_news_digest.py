@@ -883,7 +883,12 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
             for it in items if it.source != "SEC EDGAR"
         ]
 
-    news_rows = [r for r in log_rows if r.get("source", "") != "SEC EDGAR"]
+    # Main hub is closed-only: every stat, chart, and sector tab below derives
+    # from news_rows, so filtering here cascades everywhere at once.
+    news_rows = [r for r in log_rows
+                 if r.get("source", "") != "SEC EDGAR" and r.get("status", "") == "closed"]
+    pending_rows = [r for r in log_rows
+                    if r.get("source", "") != "SEC EDGAR" and r.get("status", "") == "pending"]
 
     # ── sector → color: use the fixed module-level mapping ─────────────────
     all_sectors = sorted({r.get("sector", "").strip() for r in news_rows
@@ -1182,9 +1187,33 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
         for r in sorted_rows
     ]
 
+    # Pending tab: separate data set, never mixed into the closed-only LOG above.
+    pending_sorted_rows = sorted(
+        pending_rows,
+        key=lambda r: (r.get("date", ""), int(r.get("importance", "0") or "0")),
+        reverse=True,
+    )
+    pending_payload = [
+        {
+            "date":       r.get("date", ""),
+            "title":      row_title(r),
+            "acquirer":   r.get("acquirer", ""),
+            "target":     r.get("target", ""),
+            "value":      r.get("value", ""),
+            "sector":     r.get("sector", "").strip(),
+            "importance": int(r.get("importance", "0") or "0"),
+            "source":     r.get("source", ""),
+            "url":        r.get("url", ""),
+        }
+        for r in pending_sorted_rows
+    ]
+
     js_data = (
         f"const LOG = {_json.dumps(deals_payload, ensure_ascii=False)};\n"
-        f"const SECTOR_COLORS = {_json.dumps(sector_colors)};\n"
+        f"const PENDING_LOG = {_json.dumps(pending_payload, ensure_ascii=False)};\n"
+        # Full fixed sector→color map (not the closed-only subset) so pending-only
+        # sectors still get a real color client-side instead of the gray fallback.
+        f"const SECTOR_COLORS = {_json.dumps(SECTOR_COLORS)};\n"
     )
 
     # ── CSS (plain string — braces need no escaping) ───────────────────────
@@ -1418,7 +1447,11 @@ button { cursor: pointer; font-family: inherit; border: none; }
 
 /* ── cards panel ── */
 .cards-panel { flex: 1; overflow-y: auto; padding: 2rem 2.5rem; }
-#cards {
+.pending-header { padding-bottom: 1.25rem; }
+.pending-count {
+  font-size: .78rem; font-weight: 600; color: var(--text-2); letter-spacing: .02em;
+}
+#cards, #pending-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.35rem; align-content: start;
@@ -1537,21 +1570,34 @@ function renderGrid(tab) {
   return deals.map((d, i) => renderCard(d, i === topIdx)).join('');
 }
 
+function renderPendingGrid() {
+  const deals = PENDING_LOG.slice(0, LIMIT);
+  if (!deals.length) return '<p class="empty-state">No pending deals right now.</p>';
+  const topIdx = deals.reduce((b, d, i) => d.importance > deals[b].importance ? i : b, 0);
+  return deals.map((d, i) => renderCard(d, i === topIdx)).join('');
+}
+
 function activate(el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   const color = el.dataset.color || 'var(--accent)';
   document.querySelector('.tabbar').style.setProperty('--tab-accent', color);
 
-  const homePanel = document.getElementById('home-panel');
-  const dealPanel = document.getElementById('deal-panel');
+  const homePanel    = document.getElementById('home-panel');
+  const pendingPanel = document.getElementById('pending-panel');
+  const dealPanel    = document.getElementById('deal-panel');
   const tab = el.dataset.tab;
+
+  homePanel.classList.add('hidden');
+  pendingPanel.classList.add('hidden');
+  dealPanel.classList.add('hidden');
 
   if (tab === '_home') {
     homePanel.classList.remove('hidden');
-    dealPanel.classList.add('hidden');
+  } else if (tab === '_pending') {
+    pendingPanel.classList.remove('hidden');
+    document.getElementById('pending-cards').innerHTML = renderPendingGrid();
   } else {
-    homePanel.classList.add('hidden');
     dealPanel.classList.remove('hidden');
     document.getElementById('cards').innerHTML = renderGrid(tab);
   }
@@ -1563,8 +1609,9 @@ function init() {
   const sectors = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(x => x[0]);
 
   const specs = [
-    { tab: '_home',  label: 'Home',      color: null, count: null },
-    { tab: '_all',   label: 'All Deals', color: null, count: Math.min(LOG.length, 20) },
+    { tab: '_home',    label: 'Home',      color: null, count: null },
+    { tab: '_pending', label: 'Pending',   color: null, count: Math.min(PENDING_LOG.length, 20) },
+    { tab: '_all',     label: 'All Deals', color: null, count: Math.min(LOG.length, 20) },
     ...sectors.map(s => ({
       tab: s, label: s,
       color: SECTOR_COLORS[s] || null,
@@ -1635,7 +1682,7 @@ document.addEventListener('DOMContentLoaded', init);
   <button class="sectors-btn" id="sectors-btn">Sectors</button>
   <div class="nav-right">
     <span class="nav-date">{today_str}</span>
-    <span class="nav-meta">{len(news_rows)} deals logged{"  ·  AI-filtered" if ai_used else ""}</span>
+    <span class="nav-meta">{len(news_rows)} closed deals{"  ·  AI-filtered" if ai_used else ""}</span>
     <button class="theme-btn" id="theme-toggle" title="Toggle light / dark">◑</button>
   </div>
 </nav>
@@ -1646,7 +1693,7 @@ document.addEventListener('DOMContentLoaded', init);
   {('<div class="key-insight"><span class="ki-lbl">Key Insight of the Day</span><span class="ki-txt">' + html.escape(key_insight) + '</span></div>') if key_insight else ''}
   <div class="stats">
     <div class="stat">
-      <div class="s-lbl">Total Deals</div>
+      <div class="s-lbl">Closed Deals</div>
       <div class="s-val">{stat_total}</div>
     </div>
     <div class="stat">
@@ -1674,12 +1721,12 @@ document.addEventListener('DOMContentLoaded', init);
     </div>
     <div class="panel">
       <div class="panel-title">Top 5 Deals — Last 30 Days</div>
-      <div class="panel-sub">by disclosed value · based on deals tracked</div>
+      <div class="panel-sub">by disclosed value · based on closed deals</div>
       {top5_html}
     </div>
     <div class="panel">
       <div class="panel-title">Deal Activity Over Time</div>
-      <div class="panel-sub">weekly deal count · based on deals tracked</div>
+      <div class="panel-sub">weekly deal count · based on closed deals</div>
       {activity_html}
     </div>
   </div>
@@ -1687,6 +1734,13 @@ document.addEventListener('DOMContentLoaded', init);
 
 <div id="deal-panel" class="tab-panel hidden">
   <div class="cards-panel"><div id="cards"></div></div>
+</div>
+
+<div id="pending-panel" class="tab-panel hidden">
+  <div class="cards-panel">
+    <div class="pending-header"><span class="pending-count">{len(pending_rows)} live deals</span></div>
+    <div id="pending-cards"></div>
+  </div>
 </div>
 
 <footer class="footer">

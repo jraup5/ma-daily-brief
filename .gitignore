@@ -27,3 +27,6 @@ ma_digest.md
 .Rhistory
 *.swp
 *.swo
+
+# ── generated currency-rate cache ────────────────────────────────────────────
+exchange_rates.json

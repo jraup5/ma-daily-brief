@@ -286,6 +286,40 @@ button { cursor: pointer; font-family: inherit; border: none; }
   padding: .45rem 2rem; font-size: .61rem; color: var(--text-3);
   flex-shrink: 0; display: flex; justify-content: space-between;
 }
+
+/* ── mobile layout skeleton (stage 1) ──────────────────────────────────
+   Layout fixes only: no card/table restyle, no chart changes. Those are
+   later stages. Desktop (>768px) is untouched -- everything here lives
+   inside this one media query. */
+@media (max-width: 768px) {
+  body { overflow-x: hidden; }
+
+  /* 1. stat tiles: stack vertically instead of a 4-across row */
+  .stats { grid-template-columns: 1fr; }
+  .stat { border-right: none; border-bottom: 1px solid var(--border); }
+  .stat:last-child { border-bottom: none; }
+
+  /* 2. tab nav: bigger tap targets; horizontal scroll (already in place
+     via .tabbar's overflow-x) stays the mechanism for overflow tabs */
+  .tab { padding: 1rem 1.25rem; font-size: .88rem; }
+  .tab-ct { font-size: .74rem; }
+
+  /* 3. headers and large display numbers: scale down to fit */
+  .nav { padding: .75rem 1.25rem; flex-wrap: wrap; }
+  .nav-brand { font-size: .88rem; }
+  .nav-right { gap: .85rem; }
+  .nav-date, .nav-meta { font-size: .62rem; }
+  .s-val { font-size: 1.4rem; }
+  .stat { padding: 1rem 1.25rem; }
+  .pending-count { font-size: .72rem; }
+
+  /* 4. deal cards: no literal <table> markup exists here (the deal lists
+     are a CSS grid of .card elements) -- the equivalent fix for a grid is
+     collapsing it to one column, which is what keeps the page from ever
+     overflowing horizontally. Card internals are untouched. */
+  #cards, #pending-cards { grid-template-columns: 1fr; }
+  .cards-panel { padding: 1.25rem 1.25rem; }
+}
 </style>
 </head>
 <body>

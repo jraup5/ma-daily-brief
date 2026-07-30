@@ -1535,12 +1535,18 @@ button { cursor: pointer; font-family: inherit; border: none; }
 
     # ── JS rendering functions (regular string — no escaping needed) ───────
     js_code = """
-const LIMIT = 20;
+const CLOSED_LIMIT = 100;
+const PENDING_LIMIT = 100;
+const SECTOR_LIMIT = 30;
+
+function sortByDateDesc(deals) {
+  return deals.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+}
 
 function dealsForTab(tab) {
   return tab === '_all'
-    ? LOG.slice(0, LIMIT)
-    : LOG.filter(d => d.sector === tab).slice(0, LIMIT);
+    ? sortByDateDesc(LOG).slice(0, CLOSED_LIMIT)
+    : sortByDateDesc(LOG.filter(d => d.sector === tab)).slice(0, SECTOR_LIMIT);
 }
 
 function esc(s) {
@@ -1605,7 +1611,7 @@ function renderGrid(tab) {
 }
 
 function renderPendingGrid() {
-  const deals = PENDING_LOG.slice(0, LIMIT);
+  const deals = sortByDateDesc(PENDING_LOG).slice(0, PENDING_LIMIT);
   if (!deals.length) return '<p class="empty-state">No pending deals right now.</p>';
   const topIdx = deals.reduce((b, d, i) => d.importance > deals[b].importance ? i : b, 0);
   return deals.map((d, i) => renderCard(d, i === topIdx)).join('');
@@ -1644,12 +1650,12 @@ function init() {
 
   const specs = [
     { tab: '_home',    label: 'Home',      color: null, count: null },
-    { tab: '_pending', label: 'Pending',   color: null, count: Math.min(PENDING_LOG.length, 20) },
-    { tab: '_all',     label: 'All Deals', color: null, count: Math.min(LOG.length, 20) },
+    { tab: '_pending', label: 'Latest Pending Deals', color: null, count: PENDING_LOG.length },
+    { tab: '_all',     label: 'Latest Closed Deals',  color: null, count: LOG.length },
     ...sectors.map(s => ({
       tab: s, label: s,
       color: SECTOR_COLORS[s] || null,
-      count: Math.min(LOG.filter(d => d.sector === s).length, 20)
+      count: LOG.filter(d => d.sector === s).length
     }))
   ];
 

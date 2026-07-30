@@ -1530,6 +1530,29 @@ button { cursor: pointer; font-family: inherit; border: none; }
      overflowing horizontally. Card internals are untouched. */
   #cards, #pending-cards { grid-template-columns: 1fr; }
   .cards-panel { padding: 1.25rem 1.25rem; }
+
+  /* ── stage 3: home panel row (donut / top 5 / activity graph) ──────────
+     DOM order is already donut -> top 5 -> activity, so stacking the grid
+     to one column preserves that order with no reordering needed. */
+  .home-panels { grid-template-columns: 1fr; padding: 1.25rem 1.25rem 2rem; gap: 1.25rem; }
+  .panel { padding: 1.25rem 1.35rem; }
+
+  /* donut: it has fixed width="150" height="150" HTML attributes on the
+     desktop <svg>; CSS width/height here override those so it scales via
+     its own viewBox instead of staying pinned at 150px. Capped so it
+     doesn't balloon to the full panel width on larger phones/tablets. */
+  .donut-inner { flex-direction: column; align-items: center; gap: 1rem; }
+  .donut-inner svg { width: 100%; height: auto; max-width: 220px; }
+
+  /* sector legend: full width below the donut instead of squeezed beside
+     it; drop the desktop ellipsis-truncation now that there's room, so
+     every sector row is fully readable with no inner scrollbar. */
+  .dl-legend { width: 100%; }
+  .dl-name { white-space: normal; overflow: visible; text-overflow: clip; }
+
+  /* activity graph: already fluid (viewBox + width="100%"), this is a
+     safety net so neither chart can force horizontal overflow. */
+  .home-panels svg { max-width: 100%; height: auto; display: block; }
 }
 """
 

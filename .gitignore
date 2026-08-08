@@ -35,3 +35,6 @@ exchange_rates.json
 refresh.log
 launchd_stdout.log
 launchd_stderr.log
+
+# ── local safety backups (not project content) ────────────────────────────────
+deal_log_backup_presubsector.csv

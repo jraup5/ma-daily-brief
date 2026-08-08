@@ -30,3 +30,8 @@ ma_digest.md
 
 # ── generated currency-rate cache ────────────────────────────────────────────
 exchange_rates.json
+
+# ── operational logs (auto-refresh wrapper + launchd) ─────────────────────────
+refresh.log
+launchd_stdout.log
+launchd_stderr.log

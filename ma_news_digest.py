@@ -1026,6 +1026,7 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
             acq = html.escape(r.get("acquirer", "") or "")
             tgt = html.escape(r.get("target", "") or "")
             sec = r.get("sector", "").strip()
+            sub = r.get("subsector", "").strip()
             col = sector_colors.get(sec, _SECTOR_COLOR_FALLBACK)
             url = html.escape(r.get("url", "") or "")
             parties = (
@@ -1033,6 +1034,9 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
                 (" <span class='t5-arr'>→</span> " if acq and tgt else "") +
                 (f'<span class="t5-tgt">{tgt}</span>' if tgt else "")
             )
+            tag_html = html.escape(sec)
+            if sub:
+                tag_html += f' <span class="tag-sub">&middot; {html.escape(sub)}</span>'
             href = f' href="{url}" target="_blank" rel="noopener"' if url else ""
             rows.append(
                 f'<a class="t5-row"{href}>'
@@ -1040,7 +1044,7 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
                 f'<div class="t5-meta">'
                 f'<span class="t5-val">{html.escape(fmt_m(v))}</span>'
                 f'<span class="t5-tag" style="color:{col};border-color:{col}40;background:{col}14">'
-                f'{html.escape(sec)}</span>'
+                f'{tag_html}</span>'
                 f'</div></a>'
             )
         return "".join(rows)
@@ -1201,6 +1205,7 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
             "target":     r.get("target", ""),
             "value":      r.get("value", ""),
             "sector":     r.get("sector", "").strip(),
+            "subsector":  r.get("subsector", "").strip(),
             "importance": int(r.get("importance", "0") or "0"),
             "source":     r.get("source", ""),
             "url":        r.get("url", ""),
@@ -1222,6 +1227,7 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
             "target":     r.get("target", ""),
             "value":      r.get("value", ""),
             "sector":     r.get("sector", "").strip(),
+            "subsector":  r.get("subsector", "").strip(),
             "importance": int(r.get("importance", "0") or "0"),
             "source":     r.get("source", ""),
             "url":        r.get("url", ""),
@@ -1494,6 +1500,10 @@ button { cursor: pointer; font-family: inherit; border: none; }
   font-size: .65rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
   padding: .18rem .6rem; border-radius: 3px; border: 1px solid;
 }
+/* subsector half of a sector tag ("HEALTHCARE · biotech") -- muted/lighter
+   than the sector, and explicitly not uppercased since the guide's own
+   wording is already lowercase and should read as secondary, not primary. */
+.tag-sub { text-transform: none; font-weight: 500; color: var(--text-2); }
 .top-badge { font-size: .63rem; font-weight: 700; color: var(--accent); letter-spacing: .04em; }
 .imp-dots { font-size: .68rem; color: var(--text-3); letter-spacing: 1.5px; font-family: 'Roboto Mono', monospace; }
 .card-date { font-size: .68rem; color: var(--text-3); font-family: 'Roboto Mono', monospace; }
@@ -1551,6 +1561,12 @@ button { cursor: pointer; font-family: inherit; border: none; }
      overflowing horizontally. Card internals are untouched. */
   #cards, #pending-cards { grid-template-columns: 1fr; }
   .cards-panel { padding: 1.25rem 1.25rem; }
+
+  /* sector tag now carries "SECTOR · subsector" and can run longer than
+     the old sector-only tag -- let it wrap onto its own line rather than
+     force card-head or the Top-5 meta row wider than the viewport. */
+  .card-head { flex-wrap: wrap; gap: .5rem; }
+  .t5-meta { flex-wrap: wrap; }
 
   /* ── stage 3: home panel row (donut / top 5 / activity graph) ──────────
      DOM order is already donut -> top 5 -> activity, so stacking the grid
@@ -1624,13 +1640,16 @@ function renderCard(deal, isTop) {
   const topBadge = isTop ? '<span class="top-badge">&#8593; TOP</span>' : '';
   const valHtml  = deal.value ? '<div><span class="card-value">' + esc(deal.value) + '</span></div>' : '';
 
+  const sectorTagHtml = esc(deal.sector || '—') +
+    (deal.subsector ? ' <span class="tag-sub">&middot; ' + esc(deal.subsector) + '</span>' : '');
+
   return (
     '<article class="card' + (isTop ? ' card--top' : '') + '"'
     + ' style="border-left-color:' + border + '">'
     + '<div class="card-head">'
     +   '<span class="sector-tag"'
     +     ' style="color:' + color + ';border-color:' + color + '40;background:' + color + '14">'
-    +     esc(deal.sector || '—')
+    +     sectorTagHtml
     +   '</span>'
     +   '<div class="card-head-r">' + topBadge + impDots
     +     '<span class="card-date">' + dateStr + '</span>'

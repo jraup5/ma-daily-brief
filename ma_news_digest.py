@@ -151,6 +151,13 @@ SECTOR_GUIDE: dict[str, str] = {
     "Utilities":              "electric, gas, water utilities, independent power producers, renewable electricity",
 }
 
+# Same source of truth, parsed into the allowed per-sector subsector list --
+# used to validate the AI's subsector pick (must match one of these exactly).
+SECTOR_SUBCATEGORIES: dict[str, list[str]] = {
+    sec: [item.strip() for item in desc.split(",")]
+    for sec, desc in SECTOR_GUIDE.items()
+}
+
 
 # ----------------------------------------------------------------------------
 # DATA MODEL
@@ -168,6 +175,7 @@ class NewsItem:
     target: str = ""
     value: str = ""
     sector: str = ""
+    subsector: str = ""    # one of SECTOR_GUIDE[sector]'s items, exact wording
     status: str = ""       # "closed" or "pending"
     importance: int = 0  # 1-5
 
@@ -661,6 +669,13 @@ def ai_enrich(items: list[NewsItem]) -> list[NewsItem]:
             "source is SEC EDGAR are always pending. Their filing-label titles "
             "carry no deal-stage language, so never classify them closed "
             "regardless of company name or filing type.\n\n"
+            "SUBSECTOR: after assigning sector, also assign subsector for that same "
+            "item — exactly ONE label chosen from that sector's allowed list below, "
+            "reproduced verbatim (same wording, capitalization, and punctuation). "
+            "Strict: choose only from the assigned sector's own list, never another "
+            "sector's list. If nothing fits cleanly, pick the closest listed item — "
+            "never invent a new label.\n"
+            + "\n".join(f"{sec}: {desc}" for sec, desc in SECTOR_GUIDE.items()) + "\n\n"
             "FIELD RULES:\n"
             "- Items whose source is 'SEC EDGAR': set acquirer and target to empty "
             "string — do not guess from a filing label.\n"
@@ -675,12 +690,14 @@ def ai_enrich(items: list[NewsItem]) -> list[NewsItem]:
             "Return ONLY a JSON array — no prose, no markdown fences. Do not explain "
             "your reasoning; output only the JSON array. Each element:\n"
             '{"i": <index>, "keep": true, "acquirer": "", "target": "", '
-            '"value": "", "sector": "", "importance": 1-5, '
+            '"value": "", "sector": "", "subsector": "", "importance": 1-5, '
             '"status": "closed"|"pending"}\n'
             "Only include entries where keep is true. importance: 5 = landmark/large, "
             "1 = minor. sector is REQUIRED for non-SEC items — if you cannot assign "
-            "one of the 11 sectors with confidence, set keep to false. status is "
-            "REQUIRED for every kept item and MUST be exactly 'closed' or 'pending'.\n\n"
+            "one of the 11 sectors with confidence, set keep to false. subsector is "
+            "REQUIRED whenever sector is set, and MUST be one of that sector's exact "
+            "listed items above. status is REQUIRED for every kept item and MUST be "
+            "exactly 'closed' or 'pending'.\n\n"
             "ITEMS:\n" + json.dumps(batch, ensure_ascii=False)
         )
 
@@ -725,10 +742,14 @@ def ai_enrich(items: list[NewsItem]) -> list[NewsItem]:
             # Drop non-SEC items that didn't get a valid sector assigned.
             if not sec and sector not in GICS_SECTORS:
                 continue
+            subsector = v.get("subsector", "")
+            if sec or subsector not in SECTOR_SUBCATEGORIES.get(sector, []):
+                subsector = ""
             it.acquirer = acquirer
             it.target = target
             it.value = v.get("value", "")
             it.sector = sector
+            it.subsector = subsector
             it.status = v.get("status", "")
             it.importance = int(v.get("importance", 0) or 0)
             kept.append(it)
@@ -878,7 +899,7 @@ def write_html(items: list[NewsItem], path: str, ai_used: bool, key_insight: str
                 "date": (it.published.date().isoformat() if it.published
                          else dt.date.today().isoformat()),
                 "title": it.title, "acquirer": it.acquirer, "target": it.target,
-                "value": it.value, "sector": it.sector,
+                "value": it.value, "sector": it.sector, "subsector": it.subsector,
                 "importance": str(it.importance), "source": it.source, "url": it.url,
                 "status": it.status,
             }
@@ -1829,7 +1850,7 @@ document.addEventListener('DOMContentLoaded', init);
 # DEAL LOG
 # ----------------------------------------------------------------------------
 
-_LOG_COLUMNS = ["date", "acquirer", "target", "value", "sector",
+_LOG_COLUMNS = ["date", "acquirer", "target", "value", "sector", "subsector",
                 "importance", "source", "url", "title", "status"]
 
 
@@ -1868,7 +1889,7 @@ def append_to_deal_log(items: list[NewsItem], path: str = "deal_log.csv") -> int
         try:
             with open(path, newline="", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
-                needs_migration = not {"title", "status"}.issubset(reader.fieldnames or [])
+                needs_migration = not {"title", "status", "subsector"}.issubset(reader.fieldnames or [])
                 existing_rows = list(reader)
         except Exception as e:
             print(f"  ! Could not read {path}: {e}", file=sys.stderr)
@@ -1886,6 +1907,7 @@ def append_to_deal_log(items: list[NewsItem], path: str = "deal_log.csv") -> int
             "target": it.target,
             "value": it.value,
             "sector": it.sector,
+            "subsector": it.subsector,
             "importance": it.importance,
             "source": it.source,
             "url": it.url,

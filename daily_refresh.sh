@@ -6,7 +6,7 @@
 
 export PATH="/opt/miniconda3/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-REPO_DIR="/Users/jackraup/Downloads/M&AFiles"
+REPO_DIR="/Users/jackraup/MAFiles"
 PYTHON="/opt/miniconda3/bin/python3.13"
 LOG_FILE="$REPO_DIR/refresh.log"
 
